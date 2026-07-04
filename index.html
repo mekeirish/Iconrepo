@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Créateur d'icône PWA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    input[type="file"] {
+      margin: 20px 0;
+      padding: 10px;
+    }
+    img {
+      max-width: 300px;
+      max-height: 300px;
+      margin: 15px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+    }
+    button {
+      padding: 12px 24px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #0066ff;
+      color: white;
+    }
+    .btn-success {
+      background: #00cc66;
+      color: white;
+    }
+    .preview {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+  </style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png"></head>
+<body>
+  <div class="container">
+    <h1>Créateur d'icône PWA (icon.png)</h1>
+    <p>Upload ton image → elle sera recadrée au centre en carré et redimensionnée en <strong>512×512</strong> (idéal pour PWA)</p>
+
+    <input type="file" id="upload" accept="image/*">
+    
+    <div class="preview">
+      <div>
+        <h3>Image originale</h3>
+        <img id="original" src="" alt="Original">
+      </div>
+      <div>
+        <h3>Icône carrée (512×512)</h3>
+        <img id="result" src="" alt="Résultat">
+      </div>
+    </div>
+
+    <button class="btn-primary" id="processBtn" disabled>Convertir en icône carrée</button>
+    <button class="btn-success" id="downloadBtn" disabled>Télécharger icon.png</button>
+  </div>
+
+  <script>
+    let processedCanvas = null;
+
+    const uploadInput = document.getElementById('upload');
+    const originalImg = document.getElementById('original');
+    const resultImg = document.getElementById('result');
+    const processBtn = document.getElementById('processBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    uploadInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        originalImg.src = event.target.result;
+        processBtn.disabled = false;
+        resultImg.src = '';
+        downloadBtn.disabled = true;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    processBtn.addEventListener('click', () => {
+      if (!originalImg.src) return;
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const img = new Image();
+      img.onload = () => {
+        // Taille finale pour PWA (512x512 recommandé)
+        const size = 512;
+        canvas.width = size;
+        canvas.height = size;
+
+        // Calcul du recadrage centré (crop to square)
+        let sx, sy, sw, sh;
+        if (img.width > img.height) {
+          // Image paysage → on coupe les côtés
+          sw = img.height;
+          sh = img.height;
+          sx = (img.width - img.height) / 2;
+          sy = 0;
+        } else {
+          // Image portrait ou carré → on coupe le haut/bas
+          sw = img.width;
+          sh = img.width;
+          sx = 0;
+          sy = (img.height - img.width) / 2;
+        }
+
+        // Dessiner l'image recadrée et redimensionnée
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+
+        // Afficher le résultat
+        resultImg.src = canvas.toDataURL('image/png');
+        processedCanvas = canvas;
+        downloadBtn.disabled = false;
+      };
+      img.src = originalImg.src;
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!processedCanvas) return;
+
+      const link = document.createElement('a');
+      link.download = 'icon.png';
+      link.href = processedCanvas.toDataURL('image/png');
+      link.click();
+    });
+  </script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+</body>
+</html>
