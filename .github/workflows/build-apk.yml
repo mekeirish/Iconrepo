@@ -71,4 +71,4 @@ jobs:
           removeArtifacts: true
           replacesArtifacts: true
           prerelease: true
-          token: \${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
